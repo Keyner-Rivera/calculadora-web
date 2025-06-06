@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Calculadora Web con Gráficos</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f7f6;
+            display: flex;
+            flex-direction: column; /* Para acomodar el historial y las iteraciones debajo */
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        .container {
+            background-color: #ffffff;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 700px;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 5px;
+        }
+        h2 {
+            color: #444;
+            margin-bottom: 15px;
+        }
+        h3 { /* Para el título del historial */
+            color: #333;
+            margin-top: 30px;
+            margin-bottom: 15px;
+            text-align: left;
+        }
+        p {
+            color: #666;
+            margin-bottom: 25px;
+        }
+        form {
+            text-align: left;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #555;
+        }
+        input[type="text"],
+        input[type="number"],
+        select {
+            width: calc(100% - 20px);
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+            font-size: 16px;
+        }
+        input[type="number"]::-webkit-outer-spin-button,
+        input[type="number"]::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        .helptext {
+            font-size: 0.9em;
+            color: #888;
+            margin-top: 5px;
+            display: block;
+        }
+        .errorlist {
+            color: red;
+            font-size: 0.9em;
+            margin-top: 5px;
+            list-style-type: none;
+            padding-left: 0;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 18px;
+            width: 100%;
+            margin-top: 20px;
+            transition: background-color 0.3s ease;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        .result-box, .error-box {
+            margin-top: 25px;
+            padding: 15px;
+            border-radius: 5px;
+            font-size: 1.1em;
+            font-weight: bold;
+            text-align: left;
+        }
+        .result-box {
+            background-color: #e6ffe6;
+            color: #28a745;
+            border: 1px solid #28a745;
+        }
+        .error-box {
+            background-color: #ffe6e6;
+            color: #dc3545;
+            border: 1px solid #dc3545;
+        }
+        .method-fields {
+            display: none;
+        }
+        .method-fields.active {
+            display: block;
+        }
+        .form-group p {
+            margin-bottom: 10px;
+            color: #333;
+        }
+        .form-group p label {
+            font-weight: bold;
+        }
+        .form-group p input, .form-group p select {
+            width: calc(100% - 22px);
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        .form-group p .helptext {
+            font-size: 0.85em;
+            color: #888;
+        }
+
+        /* Estilos para la tabla de historial */
+        .history-container {
+            width: 100%;
+            max-width: 900px; /* Puede ser más ancho que el formulario */
+            margin-top: 20px; /* Separación del contenedor principal */
+            background-color: #ffffff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            text-align: left; /* Alinea el texto del contenedor a la izquierda */
+        }
+        .history-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+            font-size: 0.9em;
+        }
+        .history-table th, .history-table td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+            vertical-align: top; /* Mejor para celdas con mucho texto */
+        }
+        .history-table th {
+            background-color: #f2f2f2;
+            color: #333;
+            font-weight: bold;
+        }
+        .history-table tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        .history-table td.error-message-cell {
+            color: #dc3545;
+            font-weight: bold;
+        }
+        .history-table td.result-cell {
+            color: #28a745;
+            font-weight: bold;
+        }
+        .no-history {
+            color: #777;
+            font-style: italic;
+        }
+
+        /* Estilos para la tabla de iteraciones */
+        .iterations-container {
+            width: 100%;
+            max-width: 900px;
+            margin-top: 30px;
+            background-color: #ffffff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            text-align: left;
+        }
+        .iterations-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+            font-size: 0.9em;
+        }
+        .iterations-table th, .iterations-table td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        .iterations-table th {
+            background-color: #eaf7ff; /* Lighter blue for iterations header */
+            color: #0056b3;
+            font-weight: bold;
+        }
+        .iterations-table tr:nth-child(even) {
+            background-color: #f0f8ff; /* Lighter blue for even rows */
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Calculadora de Raíces</h1>
+        <p>Introduce una función y elige un método numérico.</p>
+
+        <form method="post">
+            {% csrf_token %}
+
+            <div class="form-group">
+                <label for="{{ form.function.id_for_label }}">{{ form.function.label }}</label>
+                {{ form.function }}
+                {% if form.function.help_text %}<p class="helptext">{{ form.function.help_text }}</p>{% endif %}
+                {% if form.function.errors %}<ul class="errorlist">{% for error in form.function.errors %}<li>{{ error }}</li>{% endfor %}</ul>{% endif %}
+            </div>
+
+            <div class="form-group">
+                <label for="{{ form.method.id_for_label }}">{{ form.method.label }}</label>
+                {{ form.method }}
+                {% if form.method.help_text %}<p class="helptext">{{ form.method.help_text }}</p>{% endif %}
+                {% if form.method.errors %}<ul class="errorlist">{% for error in form.method.errors %}<li>{{ error }}</li>{% endfor %}</ul>{% endif %}
+            </div>
+
+            <div id="bisection_fields" class="method-fields">
+                <div class="form-group">
+                    <label for="{{ form.bisection_a.id_for_label }}">{{ form.bisection_a.label }}</label>
+                    {{ form.bisection_a }}
+                    {% if form.bisection_a.help_text %}<p class="helptext">{{ form.bisection_a.help_text }}</p>{% endif %}
+                    {% if form.bisection_a.errors %}<ul class="errorlist">{% for error in form.bisection_a.errors %}<li>{{ error }}</li>{% endfor %}</ul>{% endif %}
+                </div>
+                <div class="form-group">
+                    <label for="{{ form.bisection_b.id_for_label }}">{{ form.bisection_b.label }}</label>
+                    {{ form.bisection_b }}
+                    {% if form.bisection_b.help_text %}<p class="helptext">{{ form.bisection_b.help_text }}</p>{% endif %}
+                    {% if form.bisection_b.errors %}<ul class="errorlist">{% for error in form.bisection_b.errors %}<li>{{ error }}</li>{% endfor %}</ul>{% endif %}
+                </div>
+            </div>
+
+            <div id="newton_raphson_fields" class="method-fields">
+                <div class="form-group">
+                    <label for="{{ form.newton_raphson_initial_guess.id_for_label }}">{{ form.newton_raphson_initial_guess.label }}</label>
+                    {{ form.newton_raphson_initial_guess }}
+                    {% if form.newton_raphson_initial_guess.help_text %}<p class="helptext">{{ form.newton_raphson_initial_guess.help_text }}</p>{% endif %}
+                    {% if form.newton_raphson_initial_guess.errors %}<ul class="errorlist">{% for error in form.newton_raphson_initial_guess.errors %}<li>{{ error }}</li>{% endfor %}</ul>{% endif %}
+                </div>
+                <div class="form-group">
+                    <label for="{{ form.newton_raphson_derivative.id_for_label }}">{{ form.newton_raphson_derivative.label }}</label>
+                    {{ form.newton_raphson_derivative }}
+                    {% if form.newton_raphson_derivative.help_text %}<p class="helptext">{{ form.newton_raphson_derivative.help_text }}</p>{% endif %}
+                    {% if form.newton_raphson_derivative.errors %}<ul class="errorlist">{% for error in form.newton_raphson_derivative.errors %}<li>{{ error }}</li>{% endfor %}</ul>{% endif %}
+                </div>
+            </div>
+
+            <div id="modified_newton_raphson_fields" class="method-fields">
+                <div class="form-group">
+                    <label for="{{ form.modified_newton_raphson_initial_guess.id_for_label }}">{{ form.modified_newton_raphson_initial_guess.label }}</label>
+                    {{ form.modified_newton_raphson_initial_guess }}
+                    {% if form.modified_newton_raphson_initial_guess.help_text %}<p class="helptext">{{ form.modified_newton_raphson_initial_guess.help_text }}</p>{% endif %}
+                    {% if form.modified_newton_raphson_initial_guess.errors %}<ul class="errorlist">{% for error in form.modified_newton_raphson_initial_guess.errors %}<li>{{ error }}</li>{% endfor %}</ul>{% endif %}
+                </div>
+                <div class="form-group">
+                    <label for="{{ form.modified_newton_raphson_derivative.id_for_label }}">{{ form.modified_newton_raphson_derivative.label }}</label>
+                    {{ form.modified_newton_raphson_derivative }}
+                    {% if form.modified_newton_raphson_derivative.help_text %}<p class="helptext">{{ form.modified_newton_raphson_derivative.help_text }}</p>{% endif %}
+                    {% if form.modified_newton_raphson_derivative.errors %}<ul class="errorlist">{% for error in form.modified_newton_raphson_derivative.errors %}<li>{{ error }}</li>{% endfor %}</ul>{% endif %}
+                </div>
+                <div class="form-group">
+                    <label for="{{ form.modified_newton_raphson_second_derivative.id_for_label }}">{{ form.modified_newton_raphson_second_derivative.label }}</label>
+                    {{ form.modified_newton_raphson_second_derivative }}
+                    {% if form.modified_newton_raphson_second_derivative.help_text %}<p class="helptext">{{ form.modified_newton_raphson_second_derivative.help_text }}</p>{% endif %}
+                    {% if form.modified_newton_raphson_second_derivative.errors %}<ul class="errorlist">{% for error in form.modified_newton_raphson_second_derivative.errors %}<li>{{ error }}</li>{% endfor %}</ul>{% endif %}
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="{{ form.tolerance.id_for_label }}">{{ form.tolerance.label }}</label>
+                {{ form.tolerance }}
+                {% if form.tolerance.help_text %}<p class="helptext">{{ form.tolerance.help_text }}</p>{% endif %}
+                {% if form.tolerance.errors %}<ul class="errorlist">{% for error in form.tolerance.errors %}<li>{{ error }}</li>{% endfor %}</ul>{% endif %}
+            </div>
+
+            <div class="form-group">
+                <label for="{{ form.max_iterations.id_for_label }}">{{ form.max_iterations.label }}</label>
+                {{ form.max_iterations }}
+                {% if form.max_iterations.help_text %}<p class="helptext">{{ form.max_iterations.help_text }}</p>{% endif %}
+                {% if form.max_iterations.errors %}<ul class="errorlist">{% for error in form.max_iterations.errors %}<li>{{ error }}</li>{% endfor %}</ul>{% endif %}
+            </div>
+
+            <button type="submit">Calcular</button>
+        </form>
+
+        {% if result is not None and not error or "no convergió" in error|default:"" %}
+            <div class="result-box">
+                La raíz aproximada es: {{ result|floatformat:6 }}
+                {% if "no convergió" in error|default:"" %}
+                    <br><small>(Esta es la última aproximación antes de detenerse)</small>
+                {% endif %}
+            </div>
+        {% endif %}
+
+        {% if error and "no convergió" not in error %} {# Solo mostrar errores fatales aquí #}
+            <div class="error-box">
+                Error: {{ error }}
+            </div>
+        {% endif %}
+        
+        {% if graph %}
+            <div class="graph-container" style="margin-top: 30px;">
+                <h2>Gráfica de la Función</h2>
+                <img src="data:image/png;base64,{{ graph }}" alt="Gráfica de la función" style="max-width: 100%; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
+            </div>
+        {% endif %}
+    </div>
+
+    {% if iterations_data %}
+    <div class="iterations-container">
+        <h2>Detalle de Iteraciones ({{ method_name_display }})</h2>
+        <table class="iterations-table">
+            <thead>
+                <tr>
+                    <th>Iteración</th>
+                    {% if method_name == 'bisection' %}
+                        <th>a</th>
+                        <th>b</th>
+                    {% endif %}
+                    <th>x<sub>n</sub></th>
+                    <th>f(x<sub>n</sub>)</th>
+                    <th>Error Aproximado</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for iteration in iterations_data %}
+                <tr>
+                    <td>{{ forloop.counter }}</td>
+                    {% if method_name == 'bisection' %}
+                        <td>{{ iteration.a|floatformat:8 }}</td>
+                        <td>{{ iteration.b|floatformat:8 }}</td>
+                    {% endif %}
+                    <td>{{ iteration.x_n|floatformat:8 }}</td>
+                    <td>{{ iteration.f_x_n|floatformat:8 }}</td>
+                    <td>
+                        {% if iteration.approx_error is not None %}
+                            {{ iteration.approx_error|floatformat:8 }}
+                        {% else %}
+                            N/A
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
+    <div class="history-container">
+        <h2>Historial de Cálculos</h2>
+        {% if history_entries %}
+            <table class="history-table">
+                <thead>
+                    <tr>
+                        <th>Fecha</th>
+                        <th>Función</th>
+                        <th>Método</th>
+                        <th>Parámetros</th>
+                        <th>Tolerancia</th>
+                        <th>Max. Iter.</th>
+                        <th>Resultado</th>
+                        <th>Error</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for entry in history_entries %}
+                    <tr>
+                        <td>{{ entry.calculated_at|date:"Y-m-d H:i:s" }}</td>
+                        <td>{{ entry.function_expression }}</td>
+                        <td>{{ entry.method_name }}</td>
+                        <td>
+                            {% if entry.method_name == "Bisección" %}
+                                a: {{ entry.a_value|default_if_none:"N/A" }}<br>
+                                b: {{ entry.b_value|default_if_none:"N/A" }}
+                            {% elif entry.method_name == "Newton-Raphson" %}
+                                x₀: {{ entry.initial_guess_value|default_if_none:"N/A" }}<br>
+                                f'(x): {{ entry.derivative_expression|default_if_none:"N/A" }}
+                            {% elif entry.method_name == "Newton-Raphson Modificado" %}
+                                x₀: {{ entry.initial_guess_value|default_if_none:"N/A" }}<br>
+                                f'(x): {{ entry.derivative_expression|default_if_none:"N/A" }}<br>
+                                f''(x): {{ entry.second_derivative_expression|default_if_none:"N/A" }}
+                            {% else %}
+                                N/A
+                            {% endif %}
+                        </td>
+                        <td>{{ entry.tolerance|floatformat:"-8" }}</td> <td>{{ entry.max_iterations }}</td>
+                        <td class="result-cell">
+                            {% if entry.result_value is not None %}
+                                {{ entry.result_value|floatformat:6 }}
+                            {% else %}
+                                ---
+                            {% endif %}
+                        </td>
+                        <td class="error-message-cell">
+                            {% if entry.error_message %}
+                                {{ entry.error_message }}
+                            {% else %}
+                                ---
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <p class="no-history">No hay cálculos en el historial todavía.</p>
+        {% endif %}
+    </div>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const methodSelect = document.getElementById('id_method');
+            const bisectionFields = document.getElementById('bisection_fields');
+            const newtonRaphsonFields = document.getElementById('newton_raphson_fields');
+            const modifiedNewtonRaphsonFields = document.getElementById('modified_newton_raphson_fields');
+
+            function toggleMethodFields() {
+                const selectedMethod = methodSelect.value;
+
+                bisectionFields.classList.remove('active');
+                newtonRaphsonFields.classList.remove('active');
+                modifiedNewtonRaphsonFields.classList.remove('active');
+
+                if (selectedMethod === 'bisection') {
+                    bisectionFields.classList.add('active');
+                } else if (selectedMethod === 'newton_raphson') {
+                    newtonRaphsonFields.classList.add('active');
+                } else if (selectedMethod === 'modified_newton_raphson') {
+                    modifiedNewtonRaphsonFields.classList.add('active');
+                }
+            }
+            if (methodSelect) { // Asegurarse que el elemento existe
+                toggleMethodFields();
+                methodSelect.addEventListener('change', toggleMethodFields);
+            }
+        });
+    </script>
+</body>
+</html>
